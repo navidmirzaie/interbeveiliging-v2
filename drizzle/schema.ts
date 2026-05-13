@@ -10,6 +10,7 @@ import {
   decimal,
   pgEnum,
   unique,
+  index,
 } from 'drizzle-orm/pg-core'
 
 export const roleEnum = pgEnum('role', ['admin', 'planner', 'employee'])
@@ -43,7 +44,10 @@ export const roleTypes = pgTable('role_types', {
   id:             uuid('id').primaryKey().defaultRandom(),
   organisationId: uuid('organisation_id').notNull().references(() => organisations.id),
   name:           text('name').notNull(),
-}, (t) => [unique().on(t.organisationId, t.name)])
+}, (t) => [
+  unique().on(t.organisationId, t.name),
+  index('role_types_org_idx').on(t.organisationId),
+])
 
 export const grants = pgTable('grants', {
   id:          uuid('id').primaryKey().defaultRandom(),
@@ -66,7 +70,10 @@ export const employeeAvailability = pgTable('employee_availability', {
   profileId:  uuid('profile_id').notNull().references(() => profiles.id),
   dayOfWeek:  integer('day_of_week').notNull(),
   maxHours:   decimal('max_hours', { precision: 4, scale: 2 }).default('8.00'),
-}, (t) => [unique().on(t.profileId, t.dayOfWeek)])
+}, (t) => [
+  unique().on(t.profileId, t.dayOfWeek),
+  index('employee_availability_profile_idx').on(t.profileId),
+])
 
 export const shifts = pgTable('shifts', {
   id:             uuid('id').primaryKey().defaultRandom(),
@@ -78,7 +85,9 @@ export const shifts = pgTable('shifts', {
   locationLabel:  text('location_label'),
   weekPublished:  boolean('week_published').default(false),
   createdAt:      timestamp('created_at', { withTimezone: true }).defaultNow(),
-})
+}, (t) => [
+  index('shifts_org_date_idx').on(t.organisationId, t.date),
+])
 
 export type Organisation = typeof organisations.$inferSelect
 export type Profile = typeof profiles.$inferSelect
