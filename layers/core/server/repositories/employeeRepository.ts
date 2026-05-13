@@ -26,32 +26,33 @@ export const employeeRepository = {
 
     const profileIds = rows.map(r => r.id)
 
-    const grantRows = await db
-      .select({
-        profileId: grants.profileId,
-        grantId: grants.id,
-        roleTypeId: grants.roleTypeId,
-        roleTypeName: roleTypes.name,
-        startsAt: grants.startsAt,
-        expiresAt: grants.expiresAt,
-        createdAt: grants.createdAt,
-      })
-      .from(grants)
-      .innerJoin(roleTypes, eq(grants.roleTypeId, roleTypes.id))
-      .where(
-        eq(roleTypes.organisationId, orgId),
-      )
-
-    const availRows = profileIds.length
-      ? await db
-          .select({
-            profileId: employeeAvailability.profileId,
-            dayOfWeek: employeeAvailability.dayOfWeek,
-            maxHours: employeeAvailability.maxHours,
-          })
-          .from(employeeAvailability)
-          .where(inArray(employeeAvailability.profileId, profileIds))
-      : []
+    const [grantRows, availRows] = await Promise.all([
+      db
+        .select({
+          profileId: grants.profileId,
+          grantId: grants.id,
+          roleTypeId: grants.roleTypeId,
+          roleTypeName: roleTypes.name,
+          startsAt: grants.startsAt,
+          expiresAt: grants.expiresAt,
+          createdAt: grants.createdAt,
+        })
+        .from(grants)
+        .innerJoin(roleTypes, eq(grants.roleTypeId, roleTypes.id))
+        .where(
+          eq(roleTypes.organisationId, orgId),
+        ),
+      profileIds.length
+        ? db
+            .select({
+              profileId: employeeAvailability.profileId,
+              dayOfWeek: employeeAvailability.dayOfWeek,
+              maxHours: employeeAvailability.maxHours,
+            })
+            .from(employeeAvailability)
+            .where(inArray(employeeAvailability.profileId, profileIds))
+        : Promise.resolve([]),
+    ])
 
     const grantsByProfile = new Map<string, typeof grantRows>()
     for (const g of grantRows) {
