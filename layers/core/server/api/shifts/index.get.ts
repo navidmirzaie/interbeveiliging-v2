@@ -32,5 +32,6 @@ export default defineEventHandler(async (event) => {
   const { start, end } = weekBounds(week)
 
   const shifts = await shiftRepository.findByWeek(db, orgId, start, end)
-  return { shifts }
+  const published = shifts.length > 0 && shifts.every(s => s.weekPublished)
+  return { shifts, published }
 })

@@ -49,7 +49,7 @@ const { data: shiftsData, refresh: refreshShifts } = await useFetch(
 )
 
 const shifts = computed(() => shiftsData.value?.shifts ?? [])
-const isPublished = computed(() => shifts.value.length > 0 && shifts.value.every(s => s.weekPublished))
+const isPublished = computed(() => shiftsData.value?.published ?? false)
 
 await employeesStore.fetchEmployees()
 const guards = computed(() => employeesStore.schedulable)
