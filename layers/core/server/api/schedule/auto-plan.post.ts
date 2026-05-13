@@ -77,20 +77,29 @@ export default defineEventHandler(async (event) => {
   const systemPrompt = buildCaoSystemPrompt()
   const userPrompt = buildSchedulePrompt(weekStart, employees, existingShifts)
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': anthropicApiKey,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 4096,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: userPrompt }],
-    }),
-  })
+  let response: Response
+  try {
+    response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': anthropicApiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 4096,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userPrompt }],
+      }),
+      signal: AbortSignal.timeout(90_000),
+    })
+  } catch (err) {
+    if (err instanceof Error && err.name === 'TimeoutError') {
+      throw createError({ statusCode: 504, statusMessage: 'Auto-plannen duurde te lang. Probeer het opnieuw.' })
+    }
+    throw createError({ statusCode: 502, statusMessage: 'Verbinding met Claude API mislukt.' })
+  }
 
   if (!response.ok) {
     const errBody = await response.text()
