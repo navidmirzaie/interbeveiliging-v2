@@ -1,4 +1,4 @@
-import { and, eq, isNull, inArray } from 'drizzle-orm'
+import { and, eq, isNull, inArray, sql } from 'drizzle-orm'
 import { profiles, grants, roleTypes, employeeAvailability } from '../../../../drizzle/schema'
 import type { DrizzleDB } from '../../../base/server/utils/drizzle'
 
@@ -100,15 +100,14 @@ export const employeeRepository = {
   },
 
   async upsertAvailability(db: DrizzleDB, profileId: string, days: { dayOfWeek: number; maxHours: number }[]) {
-    for (const day of days) {
-      await db
-        .insert(employeeAvailability)
-        .values({ profileId, dayOfWeek: day.dayOfWeek, maxHours: String(day.maxHours) })
-        .onConflictDoUpdate({
-          target: [employeeAvailability.profileId, employeeAvailability.dayOfWeek],
-          set: { maxHours: String(day.maxHours) },
-        })
-    }
+    if (!days.length) return
+    await db
+      .insert(employeeAvailability)
+      .values(days.map(d => ({ profileId, dayOfWeek: d.dayOfWeek, maxHours: String(d.maxHours) })))
+      .onConflictDoUpdate({
+        target: [employeeAvailability.profileId, employeeAvailability.dayOfWeek],
+        set: { maxHours: sql`excluded.max_hours` },
+      })
   },
 
   async softDelete(db: DrizzleDB, id: string, orgId: string) {
