@@ -39,7 +39,10 @@ export const employeeRepository = {
       .from(grants)
       .innerJoin(roleTypes, eq(grants.roleTypeId, roleTypes.id))
       .where(
-        eq(roleTypes.organisationId, orgId),
+        and(
+          eq(roleTypes.organisationId, orgId),
+          inArray(grants.profileId, profileIds),
+        ),
       )
 
     const availRows = profileIds.length
