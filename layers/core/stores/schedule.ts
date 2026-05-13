@@ -3,12 +3,12 @@ import type { Shift } from '../../base/types/database'
 import type { CreateShiftPayload } from '../../base/types/api'
 
 function getCurrentISOWeek(): string {
-  const now = new Date()
-  const year = now.getFullYear()
-  const startOfYear = new Date(year, 0, 1)
-  const dayOfYear = Math.floor((now.getTime() - startOfYear.getTime()) / 86400000) + 1
-  const week = Math.ceil(dayOfYear / 7)
-  return `${year}-W${String(week).padStart(2, '0')}`
+  const d = new Date()
+  d.setHours(0, 0, 0, 0)
+  d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7))
+  const week1 = new Date(d.getFullYear(), 0, 4)
+  const week = 1 + Math.round(((d.getTime() - week1.getTime()) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7)
+  return `${d.getFullYear()}-W${String(week).padStart(2, '0')}`
 }
 
 export const useScheduleStore = defineStore('schedule', () => {
