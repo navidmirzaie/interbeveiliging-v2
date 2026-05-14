@@ -25,6 +25,7 @@ export const employeeRepository = {
       ))
 
     const profileIds = rows.map(r => r.id)
+    if (!profileIds.length) return []
 
     const grantRows = await db
       .select({
