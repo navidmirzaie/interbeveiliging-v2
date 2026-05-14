@@ -1,5 +1,5 @@
 import { serverSupabaseUser } from '#supabase/server'
-import { eq, isNull, and, gte } from 'drizzle-orm'
+import { eq, isNull, and, gte, inArray } from 'drizzle-orm'
 import { profiles, grants, roleTypes, employeeAvailability } from '../../../../../drizzle/schema'
 import type { ShiftSuggestion, UnfillableSlot } from '../../../../base/types/api'
 
@@ -57,9 +57,14 @@ export default defineEventHandler(async (event) => {
       eq(roleTypes.organisationId, orgId),
     ))
 
-  const availRows = await db
-    .select()
-    .from(employeeAvailability)
+  const employeeIds = employeeProfiles.map(p => p.id)
+
+  const availRows = employeeIds.length
+    ? await db
+        .select()
+        .from(employeeAvailability)
+        .where(inArray(employeeAvailability.profileId, employeeIds))
+    : []
 
   const existingShifts = await shiftRepository.findByWeekForAutoplan(db, orgId, weekStart, weekEnd)
 
