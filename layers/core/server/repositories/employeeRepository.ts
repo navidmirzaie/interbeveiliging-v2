@@ -25,6 +25,7 @@ export const employeeRepository = {
       ))
 
     const profileIds = rows.map(r => r.id)
+    if (!profileIds.length) return []
 
     const grantRows = await db
       .select({
@@ -39,7 +40,10 @@ export const employeeRepository = {
       .from(grants)
       .innerJoin(roleTypes, eq(grants.roleTypeId, roleTypes.id))
       .where(
-        eq(roleTypes.organisationId, orgId),
+        and(
+          eq(roleTypes.organisationId, orgId),
+          inArray(grants.profileId, profileIds),
+        ),
       )
 
     const availRows = profileIds.length
